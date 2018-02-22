@@ -52,7 +52,7 @@ class Hot extends Component {
 //   }
 // ]
 const DEFAULT_QUERY = 'redux';
-const DEFAULT_HPP = '100';
+const DEFAULT_HPP = '20';
 
 const PATH_BASE = 'https://hn.algolia.com/api/v1';
 const PATH_SEARCH = '/search';
@@ -65,9 +65,10 @@ class List extends Component {
     super(props);
 
     this.state = {
-      lists: null,
+      results: null,
       searchKey: '',
       serachItem: DEFAULT_QUERY,
+      error: null
     }
 
     this.onDissmiss = this.onDissmiss.bind(this);
@@ -75,11 +76,20 @@ class List extends Component {
     this.setSearchTopStories = this.setSearchTopStories.bind(this);
     this.fetchSearchTopStories = this.fetchSearchTopStories.bind(this);
     this.onSearchSubmit = this.onSearchSubmit.bind(this);
+    this.needsToSearchTopStories = this.needsToSearchTopStories.bind(this);
   }
   render() {
-    const { list, serachItem } = this.state;
-    const page = (list && list.page) || 0;
-    console.log(list && list.hits);
+    const { serachItem, results, searchKey, error } = this.state;
+    const page = (
+      results && 
+      results[searchKey] && 
+      results[searchKey].page
+    ) || 0;
+    const list = (
+      results && 
+      results[searchKey] && 
+      results[searchKey].hits
+    ) || [];
     return (
       <div className="interactions">
         <Serach 
@@ -90,29 +100,40 @@ class List extends Component {
         搜索
         </Serach>
         <br />
-        {/* 判断是否存在list */}
-        { list &&
-          <Table 
-            list={list}
-            // pattern={serachItem}
-            onDissmiss={this.onDissmiss}
-          />
+        {/* 判断是否存在error */}
+        { error
+          ? <div className="interactions">
+              <p>程序错误，无法显示</p>
+            </div>
+          : <div>
+              <Table 
+                list={list}
+                  // pattern={serachItem}
+                  onDissmiss={this.onDissmiss}
+              />
+              
+              <div className="interactions">
+                <Button onClick={() => this.fetchSearchTopStories(serachItem, page + 1)}>
+                  获取更多...
+                </Button>
+              </div>
+            </div>
         }
-        <div className="interactions">
-          <Button onClick={() => this.fetchSearchTopStories(serachItem, page + 1)}>
-            获取更多...
-          </Button>
-        </div>
       </div>
     )
   }
   onDissmiss(id) {
-    const updatedList = this.state.list.filter(item => {
+    const { searchKey, results } = this.state;
+    const { hits, page } = results[searchKey];
+    const updatedList = hits.filter(item => {
       return item.objectID !== id;
     });
     this.setState({
-      list: updatedList
-    })
+      results: {
+        ...results,
+        [searchKey]: { hits: updatedList, page }
+      }
+    });
   }
   onSearchChange(event) {
     this.setState({
@@ -121,11 +142,11 @@ class List extends Component {
   }
   setSearchTopStories(result) {
     const { hits, page } = result;
-    const { searchKey, lists} = this.state;
+    const { searchKey, results} = this.state;
 
     // searchKey用作键名
-    const oldHits = lists && lists[searchKey]
-      ? lists[searchKey].hits
+    const oldHits = results && results[searchKey]
+      ? results[searchKey].hits
       : [];
 
     // 当获取更多之前，page的值是0，hits列表应为空
@@ -138,8 +159,8 @@ class List extends Component {
       ...hits
     ];
     this.setState({ 
-      lists: {
-        ...lists,
+      results: {
+        ...results,
         [searchKey]: {hits: updateHits, page}
       }
      });
@@ -148,12 +169,18 @@ class List extends Component {
     fetch(`${PATH_BASE}${PATH_SEARCH}?${PARAM_SEARCH}${serachItem}&${PARAM_PAGE}${page}&${PARAM_HPP}${DEFAULT_HPP}`)
       .then(response => response.json())
       .then(result => this.setSearchTopStories(result))
-      .catch(e => e);
+      .catch(e => this.setState({ error: e }));
   }
   onSearchSubmit(e) {
-    const { serachItem } = this.state;
-    this.fetchSearchTopStories(serachItem);
+    const serachItem = this.state.serachItem;
+    this.setState({ searchKey: serachItem });
+    if (this.needsToSearchTopStories(serachItem)) {
+      this.fetchSearchTopStories(serachItem);
+    }
     e.preventDefault();
+  }
+  needsToSearchTopStories(serachItem) {
+    return !this.state.results[serachItem];
   }
   componentDidMount() {
     const serachItem = this.state.serachItem;
@@ -183,7 +210,7 @@ const Table = ({ list, onDissmiss }) => {
       {
         // list.filter(isSerached(pattern))
         //   .map(item => 
-          list.hits.map(item =>
+          list.map(item =>
             <div key={item.objectID} className="table-row">
               <span style={{ width: '40%' }}>
                 <a href={item.url}>{item.title}</a>
