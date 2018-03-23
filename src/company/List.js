@@ -1,56 +1,9 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
-import './App.css';
+import Button from 'material-ui/Button';
 
-class App extends Component {
-  render() {
-    return (
-      <div className="page">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          Hello,热更新
-        </p>
-        <Hot />
-        <br />
-        <List />
-      </div>
-    );
-  }
-}
+import Table from './Table';
+import Search from './Search';
 
-class Hot extends Component {
-  render() {
-    return (
-      <div>
-        这是热更新组件哈哈哈
-      </div>
-    )
-  }
-}
-/**
- * -------------分割线-----------------
- * **/
-// const list = [
-//   {
-//     title: 'React',
-//     url: 'https://facebook.github.io/react/',
-//     author: 'Jordan Walke',
-//     num_comments: 3,
-//     points: 4,
-//     objectID: 0,
-//   },
-//   {
-//     title: 'Redux',
-//     url: 'https://github.com/reactjs/redux',
-//     author: 'Dan Abramov, Andrew Clark',
-//     num_comments: 2,
-//     points: 5,
-//     objectID: 1,
-//   }
-// ]
 const DEFAULT_QUERY = 'redux';
 const DEFAULT_HPP = '20';
 
@@ -92,13 +45,13 @@ class List extends Component {
     ) || [];
     return (
       <div className="interactions">
-        <Serach 
+        <Search 
           value={serachItem}
           onChange={this.onSearchChange}
           onSubmit={this.onSearchSubmit}
         >
         搜索
-        </Serach>
+        </Search>
         <br />
         {/* 判断是否存在error */}
         { error
@@ -111,9 +64,12 @@ class List extends Component {
                   // pattern={serachItem}
                   onDissmiss={this.onDissmiss}
               />
-              
+              <br/>
               <div className="interactions">
-                <Button onClick={() => this.fetchSearchTopStories(serachItem, page + 1)}>
+                <Button 
+                  variant="raised" color="primary"
+                  onClick={() => this.fetchSearchTopStories(serachItem, page + 1)}
+                >
                   获取更多...
                 </Button>
               </div>
@@ -188,65 +144,4 @@ class List extends Component {
     this.fetchSearchTopStories(serachItem);
   }
 }
-
-const Serach = ({ onChange, onSubmit, value, children }) => {
-  return (
-    <form onSubmit={onSubmit}>
-      <input 
-        type="text"
-        onChange={onChange}
-        value={value}
-      />
-      <button type="submit">
-        {children}
-      </button>
-    </form>
-  );
-}
-
-const Table = ({ list, onDissmiss }) => {
-  return (
-    <div className="table">
-      {
-        // list.filter(isSerached(pattern))
-        //   .map(item => 
-          list.map(item =>
-            <div key={item.objectID} className="table-row">
-              <span style={{ width: '40%' }}>
-                <a href={item.url}>{item.title}</a>
-              </span>
-              <span style={{ width: '30%' }}>{item.author}</span>
-              <span style={{ width: '10%' }}>{item.num_comments}</span>
-              <span style={{ width: '10%' }}>{item.points}</span>
-              <span style={{ width: '10%' }}>
-                <Button 
-                  onClick={() => onDissmiss(item.objectID)} 
-                  className="button-inline"
-                >
-                  删除
-                </Button>
-              </span>
-            </div>
-          )
-      }
-    </div>
-  );
-}
-
-const Button = ({ onClick, className, children }) => {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={className}
-    >
-      {children}
-    </button>
-  );
-}
-
-// const isSerached = searchTerm => {
-//   return item => item.title.toLowerCase().includes(searchTerm.toLowerCase());
-// }
-
-export default App;
+export default List;
